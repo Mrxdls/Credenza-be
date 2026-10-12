@@ -1,0 +1,194 @@
+<div id="metadata-kv-container" class="space-y-3 w-full max-w-4xl">
+    <div class="rounded-default border border-base-200 dark:border-base-800 overflow-hidden bg-base-50 dark:bg-base-900/50 p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-base-200 dark:border-base-800 gap-2">
+            <div>
+                <div class="text-sm font-bold text-important flex items-center gap-2">
+                    <span>Attributes &amp; Custom Fields</span>
+                    <span id="meta-count-badge" class="px-2 py-0.5 text-xs rounded-full bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 font-semibold">{{ widget.num_items }} fields</span>
+                </div>
+                <p class="text-xs text-subtle mt-0.5">
+                    First field is the <strong>Key</strong> (attribute name), second field is the <strong>Value</strong>.
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" 
+                        onclick="loadActivityTemplate();" 
+                        class="inline-flex items-center px-3 py-1.5 bg-base-100 hover:bg-base-200 dark:bg-base-800 text-important rounded-default text-xs font-semibold border border-base-300 dark:border-base-700 shadow-xs transition"
+                        title="Auto-populate recommended keys for the selected Activity Type">
+                    + Load Template Keys
+                </button>
+                <button type="button" 
+                        onclick="addMetadataRow();" 
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white rounded-default text-xs font-semibold shadow-xs transition">
+                    <span>+ Add Field</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Key-Value Rows Container -->
+        <div id="meta-rows-list">
+            {% for key, val in widget.items %}
+            <div class="meta-kv-row flex items-center gap-3 bg-white dark:bg-base-900 p-2.5 rounded-default border border-base-200 dark:border-base-800 shadow-xs mb-2">
+                <div class="w-2/5 min-w-[200px]">
+                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-subtle mb-1">Key (Field Name)</span>
+                    <input type="text" 
+                           name="meta_keys" 
+                           value="{{ key }}" 
+                           placeholder="Key name (e.g. name_of_journal, Grant Amount)" 
+                           class="w-full px-3 py-1.5 text-sm bg-base-50 dark:bg-base-800 border border-base-300 dark:border-base-700 rounded-default text-important font-mono font-medium focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                </div>
+                <div class="grow">
+                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-subtle mb-1">Value (Data)</span>
+                    <input type="text" 
+                           name="meta_values" 
+                           value="{{ val }}" 
+                           placeholder="Value (e.g. IEEE Transactions, ₹ 5,00,000)" 
+                           class="w-full px-3 py-1.5 text-sm bg-base-50 dark:bg-base-800 border border-base-300 dark:border-base-700 rounded-default text-important focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                </div>
+                <div class="pt-5">
+                    <button type="button" 
+                            onclick="this.closest('.meta-kv-row').remove(); updateMetaCounter();" 
+                            title="Delete this attribute" 
+                            class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-default transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Empty State -->
+        <div id="meta-empty-state" class="text-center py-6 text-xs text-subtle italic {% if widget.num_items > 0 %}hidden{% endif %}">
+            No attributes defined yet. Click <strong>"+ Add Field"</strong> to create a custom key-value attribute, or click <strong>"+ Load Template Keys"</strong> to insert standard fields.
+        </div>
+    </div>
+</div>
+
+<script>
+function updateMetaCounter() {
+    const count = document.querySelectorAll('#meta-rows-list .meta-kv-row').length;
+    const badge = document.getElementById('meta-count-badge');
+    const empty = document.getElementById('meta-empty-state');
+    if (badge) badge.innerText = count + ' fields';
+    if (empty) {
+        if (count === 0) {
+            empty.classList.remove('hidden');
+        } else {
+            empty.classList.add('hidden');
+        }
+    }
+}
+
+function addMetadataRow(key, value) {
+    key = key || '';
+    value = value || '';
+    const container = document.getElementById('meta-rows-list');
+    const row = document.createElement('div');
+    row.className = 'meta-kv-row flex items-center gap-3 bg-white dark:bg-base-900 p-2.5 rounded-default border border-base-200 dark:border-base-800 shadow-xs mb-2 transition';
+    
+    row.innerHTML = `
+        <div class="w-2/5 min-w-[200px]">
+            <span class="block text-[11px] font-semibold uppercase tracking-wider text-subtle mb-1">Key (Field Name)</span>
+            <input type="text" 
+                   name="meta_keys" 
+                   value="${key.replace(/"/g, '&quot;')}" 
+                   placeholder="Key name (e.g. name_of_journal, Grant Amount)" 
+                   class="w-full px-3 py-1.5 text-sm bg-base-50 dark:bg-base-800 border border-base-300 dark:border-base-700 rounded-default text-important font-mono font-medium focus:outline-none focus:ring-1 focus:ring-primary-500" />
+        </div>
+        <div class="grow">
+            <span class="block text-[11px] font-semibold uppercase tracking-wider text-subtle mb-1">Value (Data)</span>
+            <input type="text" 
+                   name="meta_values" 
+                   value="${value.replace(/"/g, '&quot;')}" 
+                   placeholder="Value (e.g. IEEE Transactions, ₹ 5,00,000)" 
+                   class="w-full px-3 py-1.5 text-sm bg-base-50 dark:bg-base-800 border border-base-300 dark:border-base-700 rounded-default text-important focus:outline-none focus:ring-1 focus:ring-primary-500" />
+        </div>
+        <div class="pt-5">
+            <button type="button" 
+                    onclick="this.closest('.meta-kv-row').remove(); updateMetaCounter();" 
+                    title="Delete this attribute" 
+                    class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-default transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </div>
+    `;
+    container.appendChild(row);
+    updateMetaCounter();
+    const firstInput = row.querySelector('input');
+    if (firstInput && !key) firstInput.focus();
+}
+
+function loadActivityTemplate() {
+    const typeSelect = document.getElementById('id_activity_type');
+    const currentType = typeSelect ? typeSelect.value : '';
+
+    const existingKeys = new Set();
+    document.querySelectorAll('input[name="meta_keys"]').forEach(inp => {
+        if (inp.value && inp.value.trim()) existingKeys.add(inp.value.trim().toLowerCase());
+    });
+
+    let templateKeys = [];
+    if (currentType === 'journal_publication') {
+        templateKeys = [
+            'name_of_journal',
+            'isbn_issn_(if_applicable)',
+            'volume_no',
+            'issue_no',
+            'page_no',
+            'doi',
+            'indexing(if_any)_eg_scopus,_sci,_ugc_car',
+            'type_of_journal_(national_international)',
+            'date_of_publication',
+            'name_of_the_publisher'
+        ];
+    } else if (currentType === 'conference_publication') {
+        templateKeys = [
+            'conference_name',
+            'types_of_conference_(national_conference',
+            'organized_by',
+            'conference_location_(if_applicable)',
+            'date_of_conference',
+            'isbn_issn_(if_applicable)',
+            'publication_through_conference_(yes_no)'
+        ];
+    } else if (currentType === 'patent') {
+        templateKeys = [
+            'application_number',
+            'patent_status',
+            'patent_office',
+            'filing_date',
+            'date_of_publication'
+        ];
+    } else if (currentType === 'faculty_participation') {
+        templateKeys = [
+            'type_of_program_(fdp__workshop_conferenc',
+            'title_of_the_program',
+            'organized_by',
+            'sponsored_by',
+            'venue_of_the_program',
+            'start_date',
+            'end_date',
+            'duration_of_the_program',
+            'select_semester(odd_even)'
+        ];
+    } else {
+        templateKeys = ['title', 'organization', 'date', 'reference_number'];
+    }
+
+    let addedCount = 0;
+    templateKeys.forEach(k => {
+        if (!existingKeys.has(k.toLowerCase())) {
+            addMetadataRow(k, '');
+            addedCount++;
+        }
+    });
+
+    if (addedCount === 0) {
+        alert('All recommended template fields are already present in the table.');
+    }
+}
+</script>

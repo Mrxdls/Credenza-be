@@ -1,0 +1,81 @@
+{% extends "admin/base_site.html" %}
+{% load i18n unfold %}
+
+{% block breadcrumbs %}
+<div class="px-4 md:px-8 py-3 text-sm text-subtle flex items-center gap-2">
+    <a href="{% url 'admin:index' %}" class="hover:text-important transition">{% trans "Home" %}</a>
+    <span>&rsaquo;</span>
+    <a href="{% url 'admin:activities_activity_changelist' %}" class="hover:text-important transition">Achievements</a>
+    <span>&rsaquo;</span>
+    <span class="text-important font-medium">Bulk Ingestion</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-6 px-4 md:px-0">
+    <div class="bg-white dark:bg-base-900 rounded-default border border-base-200 dark:border-base-800 shadow-xs overflow-hidden">
+        <div class="px-6 py-5 border-b border-base-200 dark:border-base-800 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-bold text-important">
+                    Bulk Ingestion Console (Excel / ZIP)
+                </h2>
+                <p class="text-sm text-subtle mt-1">
+                    Upload university achievement spreadsheets or bundled ZIP packages with proofs.
+                </p>
+            </div>
+            <a href="{% url 'admin:activities_activity_changelist' %}" class="text-sm text-subtle hover:text-important transition">
+                &larr; Back to Achievements
+            </a>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
+            {% csrf_token %}
+
+            <div class="border-2 border-dashed border-base-300 dark:border-base-700 rounded-default p-8 text-center hover:border-primary-500 transition cursor-pointer">
+                <svg class="mx-auto h-12 w-12 text-subtle" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path d="M28 8H12a4 4 0 00-4 4v24a4 4 0 004 4h24a4 4 0 004-4V20L28 8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M28 8v12h12M18 28l6-6 6 6M24 22v14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <div class="mt-4 flex text-sm text-default justify-center">
+                    <label for="id_import_file" class="relative cursor-pointer bg-transparent rounded-default font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none">
+                        <span>Select a file from your computer</span>
+                        <input id="id_import_file" name="import_file" type="file" accept=".xlsx,.zip" class="sr-only" required onchange="updateFileName(this)">
+                    </label>
+                </div>
+                <p id="file-chosen" class="text-sm font-semibold text-primary-600 mt-2">No file selected</p>
+                <p class="text-xs text-subtle mt-1">Accepts .xlsx (Excel Workbook) or .zip (Workbook + Proofs Archive)</p>
+            </div>
+
+            <div class="bg-base-50 dark:bg-base-800/50 rounded-default p-4 border border-base-200 dark:border-base-700 text-xs text-subtle space-y-2">
+                <div class="font-semibold text-important">Supported Formats & Auto-Detection:</div>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>Excel (.xlsx):</strong> Auto-detects Journal Publications, Conference Publications, Patents, and FDP / Participation sheets. Handles multi-line author wraps and blank placeholders automatically.</li>
+                    <li><strong>ZIP Archive (.zip):</strong> Must contain a root <code>.xlsx</code> workbook and an optional <code>proofs/</code> folder containing PDF/image proofs matching filename columns.</li>
+                </ul>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-base-200 dark:border-base-800">
+                <a href="{% url 'admin:activities_activity_changelist' %}" class="px-4 py-2 border border-base-200 dark:border-base-700 rounded-default text-sm text-important hover:bg-base-100 dark:hover:bg-base-800 transition">
+                    Cancel
+                </a>
+                <button type="submit" class="px-5 py-2 bg-primary-600 hover:bg-primary-500 text-white font-semibold text-sm rounded-default shadow-xs transition">
+                    Upload & Ingest Records
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateFileName(input) {
+    var label = document.getElementById('file-chosen');
+    if (input.files && input.files.length > 0) {
+        label.textContent = "Selected: " + input.files[0].name + " (" + (input.files[0].size / 1024).toFixed(1) + " KB)";
+        label.className = "text-sm font-bold text-green-600 dark:text-green-400 mt-2";
+    } else {
+        label.textContent = "No file selected";
+        label.className = "text-sm font-semibold text-primary-600 mt-2";
+    }
+}
+</script>
+{% endblock %}

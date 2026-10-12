@@ -1,0 +1,71 @@
+{% extends "admin/index.html" %}
+{% load i18n unfold %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-base-200 dark:border-base-800">
+        <div>
+            <h1 class="text-2xl font-bold text-important">
+                Poornima University Faculty Achievements & Accreditation Console
+            </h1>
+            <p class="text-sm text-subtle mt-1">
+                Real-time tracking of Journal Publications, Conferences, Patents, and FDP certifications for NAAC AQAR Criteria 3 & NIRF compliance.
+            </p>
+        </div>
+        <div class="mt-4 md:mt-0 flex flex-wrap gap-3">
+            {% if not is_faculty %}
+            <a href="/admin/activities/activity/bulk-import/" class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold rounded-default shadow-xs transition">
+                📦 Bulk Import (Excel / ZIP)
+            </a>
+            <a href="/api/activities/export/" class="inline-flex items-center px-4 py-2 bg-base-100 hover:bg-base-200 dark:bg-base-800 dark:hover:bg-base-700 text-important text-sm font-semibold rounded-default border border-base-200 dark:border-base-700 shadow-xs transition">
+                📥 1-Click NAAC Export
+            </a>
+            {% endif %}
+            <a href="/admin/activities/activity/add/" class="inline-flex items-center px-4 py-2 {% if is_faculty %}bg-primary-600 hover:bg-primary-500 text-white{% else %}bg-base-100 hover:bg-base-200 dark:bg-base-800 dark:hover:bg-base-700 text-important border border-base-200 dark:border-base-700{% endif %} text-sm font-semibold rounded-default shadow-xs transition">
+                + New Submission
+            </a>
+        </div>
+    </div>
+
+    {% if kpi_cards %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {% for card in kpi_cards %}
+        <div class="bg-white dark:bg-base-900 p-5 rounded-default border border-base-200 dark:border-base-800 shadow-xs flex flex-col justify-between">
+            <div class="text-xs font-semibold uppercase tracking-wider text-subtle">
+                {{ card.title }}
+            </div>
+            <div class="text-3xl font-extrabold text-important mt-2">
+                {{ card.metric }}
+            </div>
+            <div class="text-xs text-subtle mt-1">
+                {{ card.footer }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if type_breakdown %}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <div class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 p-4 rounded-default text-center shadow-xs">
+            <span class="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">Journals</span>
+            <div class="text-2xl font-bold text-important mt-1">{{ type_breakdown.journals }}</div>
+        </div>
+        <div class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 p-4 rounded-default text-center shadow-xs">
+            <span class="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">Conferences</span>
+            <div class="text-2xl font-bold text-important mt-1">{{ type_breakdown.conferences }}</div>
+        </div>
+        <div class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 p-4 rounded-default text-center shadow-xs">
+            <span class="text-xs font-semibold uppercase tracking-wider text-orange-600 dark:text-orange-400">Patents</span>
+            <div class="text-2xl font-bold text-important mt-1">{{ type_breakdown.patents }}</div>
+        </div>
+        <div class="bg-white dark:bg-base-900 border border-base-200 dark:border-base-800 p-4 rounded-default text-center shadow-xs">
+            <span class="text-xs font-semibold uppercase tracking-wider text-green-600 dark:text-green-400">FDPs / Workshops</span>
+            <div class="text-2xl font-bold text-important mt-1">{{ type_breakdown.fdps }}</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{{ block.super }}
+{% endblock %}
