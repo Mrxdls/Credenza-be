@@ -18,14 +18,19 @@ DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 ALLOWED_HOSTS = ['*']
 
 CORS_ALLOW_CREDENTIALS = True
+cors_extra = [o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-]
+] + cors_extra
+
+csrf_extra = [o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-]
+    'https://*.vercel.app',
+    'https://*.trycloudflare.com',
+] + csrf_extra
 
 # Application definition
 INSTALLED_APPS = [
@@ -92,11 +97,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database Configuration (PostgreSQL / Cloudflare D1 / SQLite)
+# Database Configuration (DB_ENGINE from environment: 'd1' / 'sqlite3' or 'postgresql')
 DB_ENGINE = os.getenv('DB_ENGINE', 'postgresql').lower()
 
-if DB_ENGINE == 'd1':
-    # Cloudflare D1 Serverless SQL Database
+if DB_ENGINE in ('d1', 'sqlite3', 'sqlite'):
+    # Cloudflare D1 / SQLite Engine
     try:
         import js  # Present in Cloudflare Worker Pyodide runtime
         DATABASES = {
@@ -107,33 +112,69 @@ if DB_ENGINE == 'd1':
             }
         }
     except ImportError:
-        # Running outside Cloudflare Workers (CPython/Local emulation)
-        D1_SQLITE_PATH = os.getenv('D1_SQLITE_PATH', str(BASE_DIR / 'd1_local.sqlite3'))
+        # Running outside Cloudflare Workers (CPython / Vercel / Local)
+        if os.getenv('VERCEL'):
+            tmp_db = '/tmp/db.sqlite3'
+            bundled_db = BASE_DIR / 'db.sqlite3'
+            if not os.path.exists(tmp_db) and bundled_db.exists():
+                import shutil
+                shutil.copyfile(str(bundled_db), tmp_db)
+            sqlite_path = os.getenv('D1_SQLITE_PATH', tmp_db)
+        else:
+            sqlite_path = os.getenv('D1_SQLITE_PATH', str(BASE_DIR / 'db.sqlite3'))
+
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': D1_SQLITE_PATH,
+                'NAME': sqlite_path,
             }
         }
-elif DB_ENGINE == 'sqlite3':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME', 'poornima_achievements'),
-            'USER': os.getenv('DB_USER', 'postgres'),
-            'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '5432'),
-            'CONN_MAX_AGE': 600,
+    # PostgreSQL Configuration
+    DATABASE_URL = os.getenv('DATABASE_URL') or os.getenv('POSTGRES_URL')
+    if DATABASE_URL:
+        from urllib.parse import urlparse, parse_qs, unquote
+        _url = urlparse(DATABASE_URL)
+        _options = {}
+        _query_params = parse_qs(_url.query)
+        if 'sslmode' in _query_params:
+            _options['sslmode'] = _query_params['sslmode'][0]
+        elif os.getenv('DB_SSLMODE'):
+            _options['sslmode'] = os.getenv('DB_SSLMODE')
+        elif _url.hostname not in ('localhost', '127.0.0.1', None):
+            _options['sslmode'] = 'require'
+
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': _url.path.lstrip('/'),
+                'USER': unquote(_url.username or ''),
+                'PASSWORD': unquote(_url.password or ''),
+                'HOST': _url.hostname,
+                'PORT': str(_url.port or 5432),
+                'CONN_MAX_AGE': int(os.getenv('CONN_MAX_AGE', '0' if os.getenv('VERCEL') else '600')),
+                'OPTIONS': _options,
+            }
         }
-    }
+    else:
+        _db_options = {}
+        if os.getenv('DB_SSLMODE'):
+            _db_options['sslmode'] = os.getenv('DB_SSLMODE')
+        elif os.getenv('DB_HOST', 'localhost') not in ('localhost', '127.0.0.1'):
+            _db_options['sslmode'] = 'require'
+
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.getenv('DB_NAME', 'poornima_achievements'),
+                'USER': os.getenv('DB_USER', 'postgres'),
+                'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
+                'HOST': os.getenv('DB_HOST', 'localhost'),
+                'PORT': os.getenv('DB_PORT', '5432'),
+                'CONN_MAX_AGE': int(os.getenv('CONN_MAX_AGE', '0' if os.getenv('VERCEL') else '600')),
+                'OPTIONS': _db_options,
+            }
+        }
 
 # Custom User Model & Layered RBAC
 AUTH_USER_MODEL = 'accounts.User'
@@ -160,9 +201,10 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
-# Media & Storage Engine (Local / Cloudflare R2 Object Storage)
+# Media & Storage Engine (Local / Cloudflare R2 / AWS S3 Object Storage)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+PUBLIC_MEDIA_URL = os.getenv('PUBLIC_MEDIA_URL', MEDIA_URL)
 
 STORAGE_BACKEND = os.getenv('STORAGE_BACKEND', 'r2').lower()
 
@@ -197,6 +239,25 @@ if STORAGE_BACKEND == 'r2' and CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_R2_ACCESS_KE
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+elif STORAGE_BACKEND == 's3' and os.getenv('AWS_ACCESS_KEY_ID') and os.getenv('AWS_SECRET_ACCESS_KEY'):
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "access_key": os.getenv('AWS_ACCESS_KEY_ID'),
+                "secret_key": os.getenv('AWS_SECRET_ACCESS_KEY'),
+                "bucket_name": os.getenv('AWS_S3_BUCKET', 'faculty-achivements-data'),
+                "region_name": os.getenv('AWS_REGION', 'ap-south-1'),
+                "default_acl": "private",
+                "signature_version": "s3v4",
+                "querystring_auth": True,
+                "querystring_expire": int(os.getenv('AWS_S3_PRESIGNED_EXPIRY', '3600')),
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 else:
     STORAGES = {
         "default": {
@@ -209,7 +270,9 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Security Hardening & Safe Cookie Protection
+# Security Hardening & Safe Cookie Protection (Vercel & Cloudflare Edge Compatible)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
