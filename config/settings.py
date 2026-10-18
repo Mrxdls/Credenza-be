@@ -241,10 +241,6 @@ REST_FRAMEWORK = {
 }
 
 # Unfold Admin Customization
-from django.templatetags.static import static
-from django.urls import reverse_lazy
-from django.utils.translation import gettext_lazy as _
-
 UNFOLD = {
     "SITE_TITLE": "Poornima Faculty Achievements Portal",
     "SITE_HEADER": "Poornima University | Accreditation Console",
@@ -254,7 +250,7 @@ UNFOLD = {
     "ACCOUNT": {
         "navigation": [
             {
-                "title": _("My Profile"),
+                "title": "My Profile",
                 "icon": "account_circle",
                 "link": "/profile/",
             },
@@ -265,99 +261,99 @@ UNFOLD = {
         "show_all_applications": True,
         "navigation": [
             {
-                "title": _("My Workspace"),
+                "title": "My Workspace",
                 "separator": True,
                 "items": [
                     {
-                        "title": _("My Profile"),
+                        "title": "My Profile",
                         "icon": "account_circle",
                         "link": "/profile/",
                     },
                 ],
             },
             {
-                "title": _("Accreditation & Metrics"),
+                "title": "Accreditation & Metrics",
                 "separator": True,
                 "items": [
                     {
-                        "title": _("Dashboard"),
+                        "title": "Dashboard",
                         "icon": "dashboard",
-                        "link": reverse_lazy("admin:index"),
+                        "link": "/admin/",
                     },
                     {
-                        "title": _("Faculty Achievements"),
+                        "title": "Faculty Achievements",
                         "icon": "workspace_premium",
-                        "link": reverse_lazy("admin:activities_activity_changelist"),
+                        "link": "/admin/activities/activity/",
                     },
                     {
-                        "title": _("Proof Documents"),
+                        "title": "Proof Documents",
                         "icon": "attachment",
-                        "link": reverse_lazy("admin:documents_activitydocument_changelist"),
+                        "link": "/admin/documents/activitydocument/",
                     },
                     {
-                        "title": _("Bulk Import (Excel / ZIP)"),
+                        "title": "Bulk Import (Excel / ZIP)",
                         "icon": "upload_file",
-                        "link": reverse_lazy("admin:activities_activity_bulk_import"),
+                        "link": "/admin/activities/activity/bulk-import/",
                         "permission": "apps.core.dashboard.is_coordinator_or_above",
                     },
                     {
-                        "title": _("NAAC Criteria 3 Export"),
+                        "title": "NAAC Criteria 3 Export",
                         "icon": "file_download",
-                        "link": reverse_lazy("admin:activities_activity_export"),
+                        "link": "/admin/activities/activity/export/",
                         "permission": "apps.core.dashboard.is_coordinator_or_above",
                     },
                 ],
             },
             {
-                "title": _("Institutional Structure & RBAC"),
+                "title": "Institutional Structure & RBAC",
                 "separator": True,
                 "items": [
                     {
-                        "title": _("Users & Faculty"),
+                        "title": "Users & Faculty",
                         "icon": "person",
-                        "link": reverse_lazy("admin:accounts_user_changelist"),
+                        "link": "/admin/accounts/user/",
                         "permission": "apps.core.dashboard.is_admin_or_hod",
                     },
                     {
-                        "title": _("Departments"),
+                        "title": "Departments",
                         "icon": "apartment",
-                        "link": reverse_lazy("admin:accounts_department_changelist"),
+                        "link": "/admin/accounts/department/",
                         "permission": "apps.core.dashboard.is_admin_or_hod",
                     },
                     {
-                        "title": _("Designations"),
+                        "title": "Designations",
                         "icon": "badge",
-                        "link": reverse_lazy("admin:accounts_designation_changelist"),
+                        "link": "/admin/accounts/designation/",
                         "permission": "apps.core.dashboard.is_admin_or_hod",
                     },
                     {
-                        "title": _("Academic Sessions"),
+                        "title": "Academic Sessions",
                         "icon": "date_range",
-                        "link": reverse_lazy("admin:activities_academicsession_changelist"),
+                        "link": "/admin/activities/academicsession/",
                         "permission": "apps.core.dashboard.is_admin_or_hod",
                     },
                     {
-                        "title": _("Roles & Permissions"),
+                        "title": "Roles & Permissions",
                         "icon": "admin_panel_settings",
-                        "link": reverse_lazy("admin:accounts_role_changelist"),
+                        "link": "/admin/accounts/role/",
                         "permission": "apps.core.dashboard.is_admin_or_hod",
                     },
                 ],
             },
             {
-                "title": _("Platform & Multi-Tenancy (Super Admin)"),
+                "title": "Platform & Multi-Tenancy (Super Admin)",
                 "separator": True,
                 "items": [
                     {
-                        "title": _("Institutional Tenants"),
+                        "title": "Institutional Tenants",
                         "icon": "domain",
-                        "link": reverse_lazy("admin:tenants_tenant_changelist"),
+                        "link": "/admin/tenants/tenant/",
                         "permission": "apps.core.dashboard.is_superuser_only",
                     },
                     {
-                        "title": _("System Configuration"),
+                        "title": "System Configuration",
                         "icon": "settings_suggest",
-                        "link": reverse_lazy("admin:core_systemconfiguration_changelist"),
+                        "link": "/admin/core/systemconfiguration/",
                         "permission": "apps.core.dashboard.is_superuser_only",
                     },
                 ],
