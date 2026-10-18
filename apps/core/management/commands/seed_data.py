@@ -3,13 +3,11 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from apps.accounts.models import Department, Designation, Module, Role, RolePermission
 from apps.activities.models import AcademicSession
-from apps.tenants.models import Tenant
-
 User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = "Seeds initial database entities: Tenants, Modules, Roles, Permissions, Departments, Designations, Sessions, and Superuser."
+    help = "Seeds initial database entities: Modules, Roles, Permissions, Departments, Designations, Sessions, and Superuser."
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.NOTICE("Starting Poornima Portal Database Seeding..."))
@@ -17,21 +15,6 @@ class Command(BaseCommand):
         with transaction.atomic():
             # Purge obsolete/contradictory modules
             Module.objects.filter(code__in=["data_import", "data_export"]).delete()
-
-            # 0. Seed Primary Institutional Tenant
-            tenant, created = Tenant.objects.get_or_create(
-                code="PU",
-                defaults={
-                    "name": "Poornima University",
-                    "slug": "poornima-univ",
-                    "domain": "poornima.org",
-                    "is_active": True,
-                    "contact_email": "admin@poornima.org",
-                    "subscription_tier": "enterprise",
-                }
-            )
-            if created:
-                self.stdout.write(self.style.SUCCESS(f"  + Institutional Tenant created: {tenant.name} ({tenant.code})"))
 
             # 1. Seed Domain Modules
             modules_data = [
@@ -145,7 +128,6 @@ class Command(BaseCommand):
             departments = {}
             for d_info in depts_data:
                 dept, created = Department.objects.get_or_create(
-                    tenant=tenant,
                     code=d_info["code"],
                     defaults={"name": d_info["name"]}
                 )
@@ -153,7 +135,7 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(self.style.SUCCESS(f"  + Department created: {dept.name} ({dept.code})"))
 
-            # 5. Seed Designations (scoped to Tenant)
+            # 5. Seed Designations
             desigs_data = [
                 {"name": "Professor", "code": "PROF", "priority": 10},
                 {"name": "Associate Professor", "code": "ASSOC_PROF", "priority": 20},
@@ -163,7 +145,6 @@ class Command(BaseCommand):
             designations = {}
             for dg_info in desigs_data:
                 desig, created = Designation.objects.get_or_create(
-                    tenant=tenant,
                     code=dg_info["code"],
                     defaults={"name": dg_info["name"], "priority": dg_info["priority"]}
                 )
@@ -171,14 +152,13 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(self.style.SUCCESS(f"  + Designation created: {desig.name}"))
 
-            # 6. Seed Academic Sessions (scoped to Tenant)
+            # 6. Seed Academic Sessions
             sessions_data = [
                 {"name": "2025-2026", "start": "2025-07-01", "end": "2026-06-30", "current": True},
                 {"name": "2026-2027", "start": "2026-07-01", "end": "2027-06-30", "current": False},
             ]
             for s_info in sessions_data:
                 sess, created = AcademicSession.objects.get_or_create(
-                    tenant=tenant,
                     name=s_info["name"],
                     defaults={
                         "start_date": s_info["start"],
@@ -189,8 +169,7 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(self.style.SUCCESS(f"  + Academic Session created: {sess.name}"))
 
-            # 7. Seed Administrative Users
-            # Root Superuser / Supreme Admin (Platform Owner)
+            # 7. Seed Administrative Users (Only DevOps Superadmin)
             admin_user, created = User.objects.get_or_create(
                 username="admin",
                 defaults={
@@ -207,77 +186,8 @@ class Command(BaseCommand):
                 admin_user.save()
                 self.stdout.write(self.style.SUCCESS("  + Superuser created: admin / admin123"))
 
-            # Department Coordinator (Advance Computing)
-            coord_user, created = User.objects.get_or_create(
-                username="coordinator.ac",
-                defaults={
-                    "first_name": "Coordinator",
-                    "last_name": "Advance Computing",
-                    "email": "coordinator.ac@poornima.org",
-                    "tenant": tenant,
-                    "department": departments.get("AC"),
-                    "designation": designations.get("Associate Professor"),
-                    "role": roles["coordinator"],
-                    "is_staff": True,
-                    "is_coordinator": True,
-                }
-            )
-            if created:
-                coord_user.set_password("coordinator123")
-                coord_user.save()
-                self.stdout.write(self.style.SUCCESS("  + Coordinator created: coordinator.ac / coordinator123"))
-            elif not coord_user.tenant_id:
-                coord_user.tenant = tenant
-                coord_user.save(update_fields=['tenant'])
-
-            # Department HOD (Advance Computing)
-            hod_user, created = User.objects.get_or_create(
-                username="hod.ac",
-                defaults={
-                    "first_name": "HOD",
-                    "last_name": "Advance Computing",
-                    "email": "hod.ac@poornima.org",
-                    "tenant": tenant,
-                    "department": departments.get("AC"),
-                    "designation": designations.get("Professor"),
-                    "role": roles["hod"],
-                    "is_staff": True,
-                    "is_department_head": True,
-                }
-            )
-            if created:
-                hod_user.set_password("hod123")
-                hod_user.save()
-                self.stdout.write(self.style.SUCCESS("  + HOD created: hod.ac / hod123"))
-            elif not hod_user.tenant_id:
-                hod_user.tenant = tenant
-                hod_user.save(update_fields=['tenant'])
-
-            # Faculty Member (Advance Computing) - Default Group Demonstration
-            faculty_user, created = User.objects.get_or_create(
-                username="faculty.ac",
-                defaults={
-                    "first_name": "Amit",
-                    "last_name": "Verma",
-                    "email": "faculty.ac@poornima.org",
-                    "tenant": tenant,
-                    "department": departments.get("AC"),
-                    "designation": designations.get("Assistant Professor"),
-                    "role": roles["faculty"],
-                    "is_staff": False,
-                }
-            )
-            if created:
-                faculty_user.set_password("faculty123")
-                faculty_user.save()
-                self.stdout.write(self.style.SUCCESS("  + Faculty created: faculty.ac / faculty123 (Default Role & Group)"))
-            elif not faculty_user.tenant_id:
-                faculty_user.tenant = tenant
-                faculty_user.save(update_fields=['tenant'])
-
-            # Attach default group to all seeded users
-            for u in [admin_user, coord_user, hod_user, faculty_user]:
-                if not u.groups.filter(id=default_group.id).exists():
-                    u.groups.add(default_group)
+            # Attach default group to admin
+            if not admin_user.groups.filter(id=default_group.id).exists():
+                admin_user.groups.add(default_group)
 
         self.stdout.write(self.style.SUCCESS("\n[DONE] Database seeding completed successfully!"))
