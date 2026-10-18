@@ -1,0 +1,27 @@
+Registration Received — {{ tenant.name }}
+==================================================
+
+Dear {{ user.first_name|default:user.username }},
+
+Thank you for registering {{ tenant.name }} on the Credenza Institutional Achievements Portal.
+We have received your application and our compliance team is currently reviewing your organization details.
+
+Registration Summary:
+--------------------------------------------------
+* Institution Name:   {{ tenant.name }}
+* Short Code:         {{ tenant.code }}
+{% if tenant.domain %}* Official Domain:    {{ tenant.domain }}
+{% endif %}* Admin Email:        {{ user.email }}
+* Subscription Tier:  {{ tenant.subscription_tier|title }}
+* Account Status:     Pending Approval
+
+Next Steps:
+1. Our team will verify your institution credentials and domain ownership.
+2. Once approved, you will receive an activation email confirming that your portal is ready.
+3. You will then be able to log in, onboard faculty members, and configure institutional departments.
+
+If you have any questions, please reach out to us at info@oryvo.co.in.
+
+Best regards,
+Credenza Support Team
+Oryvo

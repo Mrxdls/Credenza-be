@@ -441,10 +441,10 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 't')
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'mridul.s@oryvo.co.in')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'info@oryvo.co.in')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@oryvo.co.in')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-NOTIFY_ADMIN_EMAIL = os.getenv('NOTIFY_ADMIN_EMAIL', 'mridul.s@oryvo.co.in')
+NOTIFY_ADMIN_EMAIL = os.getenv('NOTIFY_ADMIN_EMAIL', 'info@oryvo.co.in')
 
 

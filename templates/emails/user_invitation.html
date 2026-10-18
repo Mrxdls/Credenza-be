@@ -1,0 +1,46 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Welcome to {{ tenant.name|default:"Credenza Portal" }} — Set Your Password{% endblock %}
+
+{% block content %}
+  <h2>Account Created</h2>
+  <p>Dear {{ user.first_name|default:user.username }},</p>
+  <p>
+    An account has been created for you on the <strong>{{ tenant.name|default:"Credenza Achievements Portal" }}</strong>.
+    Please set up your account password to begin archiving your publications, patents, and faculty credentials.
+  </p>
+
+  <div class="card">
+    <div class="card-row">
+      <span class="card-label">Institution</span>
+      <span class="card-value">{{ tenant.name|default:"Credenza Platform" }}</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Username / Login ID</span>
+      <span class="card-value">{{ user.username }}</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Email</span>
+      <span class="card-value">{{ user.email }}</span>
+    </div>
+    {% if user.role %}
+    <div class="card-row">
+      <span class="card-label">Role</span>
+      <span class="card-value">{{ user.role.name }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="btn-container">
+    <a href="{{ setup_url }}" class="btn">Set Up Password & Activate</a>
+  </div>
+
+  <p style="font-size: 13px; color: #64748b; text-align: center;">
+    Or open directly: <a href="{{ setup_url }}" style="color: #2563eb; word-break: break-all;">{{ setup_url }}</a>
+  </p>
+
+  <p style="font-size: 13px; color: #64748b; margin-top: 24px;">
+    <strong>Security Note:</strong> This invitation link is unique to you and will expire in <strong>7 days</strong>.
+    If the link expires, please request a new invitation from your institution administrator.
+  </p>
+{% endblock %}

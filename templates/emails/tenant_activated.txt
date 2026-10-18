@@ -1,0 +1,28 @@
+Institution Approved — {{ tenant.name }} is Live!
+==================================================
+
+Dear {{ user.first_name|default:user.username }},
+
+We are pleased to inform you that {{ tenant.name }} has been verified and approved on the Credenza platform.
+Your administrator account is now active.
+
+Account Summary:
+--------------------------------------------------
+* Institution:  {{ tenant.name }}
+* Short Code:   {{ tenant.code }}
+* Username:     {{ user.username }}
+* Status:       Active & Verified
+
+You can now log in to the portal:
+{{ login_url }}
+
+Getting Started:
+1. Log in using your registered credentials.
+2. Configure academic departments and faculty designations.
+3. Bulk-import or invite faculty members to start archiving achievements.
+
+If you have any questions or require support, please contact us at info@oryvo.co.in.
+
+Best regards,
+Credenza Support Team
+Oryvo

@@ -1,0 +1,22 @@
+Welcome to {{ tenant.name|default:"Credenza Portal" }} — Set Your Password
+==================================================
+
+Dear {{ user.first_name|default:user.username }},
+
+An account has been created for you on the {{ tenant.name|default:"Credenza Achievements Portal" }}.
+Please click the link below to set your password and activate your account:
+
+{{ setup_url }}
+
+Account Details:
+--------------------------------------------------
+* Institution:  {{ tenant.name|default:"Credenza Platform" }}
+* Username:     {{ user.username }}
+* Email:        {{ user.email }}
+{% if user.role %}* Role:         {{ user.role.name }}
+{% endif %}
+Note: This one-time link is valid for 7 days.
+
+Best regards,
+{{ tenant.name|default:"Credenza" }} Administration
+Oryvo

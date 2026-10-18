@@ -1,0 +1,53 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Registration Received — {{ tenant.name }}{% endblock %}
+
+{% block content %}
+  <h2>Registration Received</h2>
+  <p>Dear {{ user.first_name|default:user.username }},</p>
+  <p>
+    Thank you for registering <strong>{{ tenant.name }}</strong> on the Credenza Institutional Achievements Portal.
+    We have received your application and our compliance team is currently reviewing your organization details.
+  </p>
+
+  <div class="card">
+    <div class="card-row">
+      <span class="card-label">Institution Name</span>
+      <span class="card-value">{{ tenant.name }}</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Short Code</span>
+      <span class="card-value">{{ tenant.code }}</span>
+    </div>
+    {% if tenant.domain %}
+    <div class="card-row">
+      <span class="card-label">Official Domain</span>
+      <span class="card-value">{{ tenant.domain }}</span>
+    </div>
+    {% endif %}
+    <div class="card-row">
+      <span class="card-label">Administrator Email</span>
+      <span class="card-value">{{ user.email }}</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Subscription Tier</span>
+      <span class="card-value">{{ tenant.subscription_tier|title }}</span>
+    </div>
+    <div class="card-row">
+      <span class="card-label">Account Status</span>
+      <span class="card-value"><span class="badge badge-pending">Pending Approval</span></span>
+    </div>
+  </div>
+
+  <h3>Next Steps</h3>
+  <ol style="padding-left: 20px; line-height: 1.8; color: #475569;">
+    <li>Our team will verify your institution credentials and domain ownership.</li>
+    <li>Once approved, you will receive an activation email confirming that your portal is ready.</li>
+    <li>You will then be able to log in, onboard faculty members, and configure institutional departments.</li>
+  </ol>
+
+  <p style="margin-top: 24px; font-size: 14px; color: #64748b;">
+    If you did not initiate this request or have questions regarding your application, please reach out to our team at
+    <a href="mailto:info@oryvo.co.in" style="color: #2563eb;">info@oryvo.co.in</a>.
+  </p>
+{% endblock %}

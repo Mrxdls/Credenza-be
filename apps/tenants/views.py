@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User, Role
+from apps.core.services.email_service import EmailService
 from .models import Tenant
 from .serializers import TenantSerializer
 from .permissions import IsSupremeAdmin
@@ -35,27 +36,8 @@ class TenantViewSet(viewsets.ModelViewSet):
         admin_users = list(User.objects.filter(tenant=tenant, is_staff=True))
         User.objects.filter(tenant=tenant, is_staff=True).update(is_approved=True, is_active=True)
 
-        from django.core.mail import send_mail
-        from django.conf import settings
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@oryvo.co.in')
         for admin_user in admin_users:
-            try:
-                send_mail(
-                    subject=f"Institution Activated — {tenant.name} is now Live!",
-                    message=(
-                        f"Dear {admin_user.get_full_name() or admin_user.username},\n\n"
-                        f"Great news! Your institution '{tenant.name}' has been verified and activated on Credenza.\n\n"
-                        f"You can now log in to the portal with your credentials:\n"
-                        f"https://credenza-be-rvs8.vercel.app/login\n\n"
-                        f"Best regards,\n"
-                        f"Credenza Support Team"
-                    ),
-                    from_email=from_email,
-                    recipient_list=[admin_user.email],
-                    fail_silently=True
-                )
-            except Exception as err:
-                logger.warning(f"Failed to dispatch activation email to {admin_user.email}: {err}")
+            EmailService.send_tenant_activated_email(tenant, admin_user)
 
         return Response({"status": "active", "message": f"Tenant '{tenant.name}' has been activated and administrators approved."})
 
@@ -65,64 +47,6 @@ class TenantViewSet(viewsets.ModelViewSet):
         tenant.is_active = False
         tenant.save(update_fields=['is_active', 'updated_at'])
         return Response({"status": "inactive", "message": f"Tenant '{tenant.name}' has been deactivated. Tenant users are now locked out."})
-
-
-def send_registration_notifications(tenant, user):
-    """
-    Dispatches:
-    1. Confirmation email to the registering administrator.
-    2. Notification email to the platform superadmin.
-    """
-    from django.core.mail import send_mail
-    from django.conf import settings
-
-    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@oryvo.co.in')
-    notify_admin = getattr(settings, 'NOTIFY_ADMIN_EMAIL', 'mridul.s@oryvo.co.in')
-
-    # 1. Confirmation email to registering institution applicant
-    user_subject = f"Registration Received — {tenant.name} | Credenza Portal"
-    user_message = (
-        f"Dear {user.get_full_name() or user.username},\n\n"
-        f"Thank you for registering {tenant.name} on the Credenza Institutional Achievements Portal.\n\n"
-        f"Registration Summary:\n"
-        f"  • Institution Name: {tenant.name}\n"
-        f"  • Short Code: {tenant.code}\n"
-        f"  • Administrator Email: {user.email}\n"
-        f"  • Subscription Tier: {tenant.subscription_tier.title()}\n\n"
-        f"Status: Under Review\n"
-        f"Your organization account is currently pending verification and activation by the platform administrator. "
-        f"You will receive an email confirmation as soon as your account is activated.\n\n"
-        f"Best regards,\n"
-        f"Credenza Support Team"
-    )
-    try:
-        send_mail(user_subject, user_message, from_email, [user.email], fail_silently=False)
-        logger.info(f"Dispatched registration confirmation to applicant {user.email}")
-    except Exception as err:
-        logger.error(f"Failed to dispatch applicant registration email to {user.email}: {err}")
-
-    # 2. Alert email to platform administrator (mridul.s@oryvo.co.in)
-    if notify_admin and notify_admin != user.email:
-        admin_subject = f"New Institution Registration: {tenant.name} ({tenant.code})"
-        admin_message = (
-            f"Hello Administrator,\n\n"
-            f"A new institution has registered on Credenza:\n\n"
-            f"  • Institution: {tenant.name}\n"
-            f"  • Short Code: {tenant.code}\n"
-            f"  • Domain: {tenant.domain or 'None'}\n"
-            f"  • Tier: {tenant.subscription_tier.title()}\n"
-            f"  • Contact Person: {tenant.contact_name} ({user.email})\n"
-            f"  • Phone: {tenant.contact_phone or 'N/A'}\n"
-            f"  • Address: {tenant.address or 'N/A'}\n\n"
-            f"To review and approve this institution, please log in to the admin console:\n"
-            f"https://credenza-be.vercel.app/admin/tenants/tenant/{tenant.id}/change/\n\n"
-            f"— Credenza Notification System"
-        )
-        try:
-            send_mail(admin_subject, admin_message, from_email, [notify_admin], fail_silently=False)
-            logger.info(f"Dispatched admin registration alert to {notify_admin}")
-        except Exception as err:
-            logger.error(f"Failed to dispatch admin registration notification to {notify_admin}: {err}")
 
 
 class OrganizationRegistrationView(APIView):
@@ -244,7 +168,8 @@ class OrganizationRegistrationView(APIView):
                 user.save()
 
             # Dispatch confirmation email to applicant and alert email to platform admin
-            send_registration_notifications(tenant, user)
+            EmailService.send_registration_received_email(tenant, user)
+            EmailService.send_admin_new_registration_alert(tenant, user)
 
             if is_json and not request.POST:
                 return Response({

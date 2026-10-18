@@ -11,6 +11,7 @@ from django.conf import settings
 from django.db import transaction
 
 from apps.accounts.models import User, Role
+from apps.core.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -280,24 +281,8 @@ class UserImportService:
 
     @classmethod
     def send_invitation_email(cls, user, setup_url: str, tenant):
-        """Sends the one-time activation & password setup link (valid for 1 week)."""
-        tenant_name = tenant.name if tenant else "Poornima University Portal"
-        subject = f"Welcome to {tenant_name} — Set Up Your Account Password"
-        body = (
-            f"Dear {user.get_full_name() or user.username},\n\n"
-            f"An account has been created for you on the {tenant_name} Achievements Portal.\n\n"
-            f"Please click the link below to set your password and activate your account:\n"
-            f"{setup_url}\n\n"
-            f"This one-time link is valid for 7 days (1 week). If you do not set your password within this time, "
-            f"please contact your institution's administrator to request a new invitation.\n\n"
-            f"Best regards,\n"
-            f"{tenant_name} Administration"
-        )
-        try:
-            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@poornima.org')
-            send_mail(subject, body, from_email, [user.email], fail_silently=True)
-        except Exception as e:
-            logger.warning(f"Could not dispatch email to {user.email}: {e}")
+        """Sends the one-time activation & password setup link using responsive HTML template."""
+        return EmailService.send_user_invitation_email(user, setup_url, tenant)
 
     @classmethod
     def complete_password_setup(cls, user_id_str: str, token: str, new_password: str) -> tuple[bool, str, User | None]:

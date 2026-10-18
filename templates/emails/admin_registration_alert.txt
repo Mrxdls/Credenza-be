@@ -1,0 +1,23 @@
+Action Required: New Institution Registration — {{ tenant.name }}
+==================================================
+
+Hello Admin,
+
+A new organization has registered on the Credenza platform and is awaiting administrative approval:
+
+Institution Details:
+--------------------------------------------------
+* Institution Name:   {{ tenant.name }}
+* Short Code:         {{ tenant.code }}
+* Domain:             {{ tenant.domain|default:"None specified" }}
+* Contact Person:     {{ tenant.contact_name|default:user.get_full_name }}
+* Contact Email:      {{ user.email }}
+* Phone:              {{ tenant.contact_phone|default:"N/A" }}
+* Address:            {{ tenant.address|default:"N/A" }}
+* Subscription Tier:  {{ tenant.subscription_tier|title }}
+
+To review and activate this tenant, open the administration portal:
+{{ admin_url }}
+
+— Credenza Notification System
+Oryvo
